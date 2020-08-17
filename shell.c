@@ -218,7 +218,7 @@ char **SHELL_SPLIT_LINE(char *line)
     return tokens;
 }
 
-char *SHELL_TOP_FROM_PATH(char *line)
+void SHELL_TOP_FROM_PATH(char *line, int maxAllowed)
 {
     int bufsize = PATHBUFSIZE, position = 0;
     char **tokens = malloc(bufsize * sizeof(char*));
@@ -245,17 +245,37 @@ char *SHELL_TOP_FROM_PATH(char *line)
             }
         }
         
-        token = strtok(NULL, TOKENDELIM);
+        token = strtok(NULL, PATHDELIM);
     }
-    tokens[position] = NULL;
-    return tokens[position - 1];
+    tokens[position] = "fren";
+	for (int i = 1; i <= maxAllowed; ++i){
+		if (i > 1) {
+			printf("/");
+		}
+		printf(tokens[position - i]);
+	}
 }
 
+void getCurrentFolder(int maxAllowed) {
+	char * home = getenv("HOME");
+	char * pwd = getenv("PWD");
+	if (strcmp(pwd, home) == 0) {
+		printf("~");
+	} else {
+		SHELL_TOP_FROM_PATH(pwd, maxAllowed);
+//		if (pwf == NULL) {
+//			return "/";
+//		} else {
+//			return pwf;
+//		}
+	}
+}
 void SHELL_PROMPT() {
 	//printf(prompt);
 	int MODE = 0;
 	int PASS = 0;
 	char clrCode[3];
+	char str1[32];
 	int pos = 0;
 	char hostname[1024];
 	hostname[1023] = '\0';
@@ -268,24 +288,30 @@ void SHELL_PROMPT() {
 			MODE = 1;
 		} else if (MODE == 1) {
 			switch(prompt[i]) {
-					case 'b':
-						printf("\033[0m");
-						break;
-					case 'B':
-						printf("\033[1m");
-						break;
-					case 'F':
-						PASS = 1;
-						break;
-					case 'm':
-						printf("%s", hostname);
-						break;
-					case '#':
-						printf("%%");
-						break;
-					default:
-						//printf("-MARKER2-");
-						break;
+				case 'b':
+					printf("\033[0m");
+					break;
+				case 'B':
+					printf("\033[1m");
+					break;
+				case 'F':
+					PASS = 1;
+					break;
+				case 'm':
+					printf("%s", hostname);
+					break;
+				case '#':
+					printf("%%");
+					break;
+				case '~':
+					getCurrentFolder(0);
+					break;
+				default:
+					//printf("-MARKER2-");
+					if ( isdigit(prompt[i]) ) {
+						PASS = 2;
+					}
+					break;
 			}
 			
 			MODE = 0;
@@ -298,6 +324,15 @@ void SHELL_PROMPT() {
 				clrCode[pos] = prompt[i];
 				pos++;
 			}
+		} else if (PASS == 2) {
+			switch(prompt[i]) {
+				case '~':
+					strcpy(str1, &prompt[i-1]);
+					getCurrentFolder(atoi(str1));
+				default:
+					break;
+			}
+			PASS = 0;
 		} else {
 			printf("%c", prompt[i]);    /* Print each character of the string. */
 		}
